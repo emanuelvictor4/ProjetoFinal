@@ -1,64 +1,55 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+import "./Feedback.css";
+import StarRating from "./StarRating";
+
 const API = "http://localhost/projetoFinal/punk/back-end/feedback.php";
 
-function StarRating({ value, onChange, readonly = false }) {
-  const [hovered, setHovered] = useState(0);
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button
-          key={star}
-          type="button"
-          disabled={readonly}
-          onClick={() => !readonly && onChange?.(star)}
-          onMouseEnter={() => !readonly && setHovered(star)}
-          onMouseLeave={() => !readonly && setHovered(0)}
-          className={`text-2xl transition-colors ${
-            star <= (hovered || value) ? "text-[#1DB954]" : "text-[#333]"
-          } ${readonly ? "cursor-default" : "cursor-pointer"}`}
-        >
-          ★
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function Feedback({ user, onLogout }) {
-  const [feedbacks, setFeedbacks]     = useState([]);
-  const [jaEnviou, setJaEnviou]       = useState(false);
-  const [loading, setLoading]         = useState(false);
-  const [submitting, setSubmitting]   = useState(false);
-  const [error, setError]             = useState(null);
-  const [success, setSuccess]         = useState(null);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [jaEnviou, setJaEnviou] = useState(false);
 
-  // form de criação
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
   const [mensagem, setMensagem] = useState("");
-  const [nota, setNota]         = useState(0);
+  const [nota, setNota] = useState(0);
 
-  // edição
-  const [editando, setEditando]         = useState(null); // { id, mensagem, nota }
+  const [editando, setEditando] = useState(null);
   const [editMensagem, setEditMensagem] = useState("");
-  const [editNota, setEditNota]         = useState(0);
+  const [editNota, setEditNota] = useState(0);
 
-  // visualização
   const [visualizando, setVisualizando] = useState(null);
 
   const loadFeedbacks = async () => {
     setLoading(true);
+
     try {
-      const { data } = await axios.post(API, { action: "list" });
-      if (data.success) setFeedbacks(data.feedbacks);
+      const { data } = await axios.post(API, {
+        action: "list",
+      });
+
+      if (data.success) {
+        setFeedbacks(data.feedbacks);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const checkJaEnviou = async () => {
-    const { data } = await axios.post(API, { action: "check", idusuario: user.idusuarios });
-    if (data.success) setJaEnviou(data.jaEnviou);
+    const { data } = await axios.post(API, {
+      action: "check",
+      idusuario: user.idusuarios,
+    });
+
+    if (data.success) {
+      setJaEnviou(data.jaEnviou);
+    }
   };
 
   useEffect(() => {
@@ -66,201 +57,369 @@ export default function Feedback({ user, onLogout }) {
     checkJaEnviou();
   }, []);
 
-  // CRIAR
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError(null);
-    if (!nota)           { setError("Selecione uma nota."); return; }
-    if (!mensagem.trim()){ setError("Escreva uma mensagem."); return; }
+
+    if (!nota) {
+      setError("Selecione uma nota.");
+      return;
+    }
+
+    if (!mensagem.trim()) {
+      setError("Escreva uma mensagem.");
+      return;
+    }
+
     setSubmitting(true);
+
     try {
-      const { data } = await axios.post(API, { action: "create", idusuario: user.idusuarios, mensagem, nota });
+      const { data } = await axios.post(API, {
+        action: "create",
+        idusuario: user.idusuarios,
+        mensagem,
+        nota,
+      });
+
       if (data.success) {
         setSuccess("Feedback enviado!");
-        setMensagem(""); setNota(0);
+        setMensagem("");
+        setNota(0);
         setJaEnviou(true);
+
         loadFeedbacks();
-        setTimeout(() => setSuccess(null), 3000);
+
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
       } else {
         setError(data.message);
       }
-    } catch { setError("Erro ao enviar."); }
-    finally  { setSubmitting(false); }
+    } catch {
+      setError("Erro ao enviar feedback.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // EDITAR — abrir
   const abrirEdicao = (fb) => {
     setEditando(fb);
     setEditMensagem(fb.mensagem);
     setEditNota(Number(fb.nota));
-    setVisualizando(null);
-    setError(null);
   };
 
-  // EDITAR — salvar
   const handleEditar = async (e) => {
     e.preventDefault();
-    setError(null);
-    if (!editNota)            { setError("Selecione uma nota."); return; }
-    if (!editMensagem.trim()) { setError("Escreva uma mensagem."); return; }
+
     setSubmitting(true);
+
     try {
-      const { data } = await axios.post(API, { action: "update", id: editando.id, mensagem: editMensagem, nota: editNota });
+      const { data } = await axios.post(API, {
+        action: "update",
+        id: editando.id,
+        mensagem: editMensagem,
+        nota: editNota,
+      });
+
       if (data.success) {
         setEditando(null);
         loadFeedbacks();
-      } else {
-        setError(data.message);
       }
-    } catch { setError("Erro ao editar."); }
-    finally  { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // DELETAR
   const handleDeletar = async (id) => {
-    if (!confirm("Tem certeza que deseja remover este feedback?")) return;
+    if (!window.confirm("Deseja remover este feedback?")) {
+      return;
+    }
+
     try {
-      const { data } = await axios.post(API, { action: "delete", id });
+      const { data } = await axios.post(API, {
+        action: "delete",
+        id,
+      });
+
       if (data.success) {
-        if (feedbacks.find(f => f.id === id)?.idusuario === user.idusuarios) setJaEnviou(false);
         setVisualizando(null);
+        setJaEnviou(false);
         loadFeedbacks();
       }
-    } catch { alert("Erro ao deletar."); }
+    } catch {
+      alert("Erro ao excluir.");
+    }
   };
 
-  const formatDate = (str) => new Date(str).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  const formatDate = (data) =>
+    new Date(data).toLocaleDateString("pt-BR");
 
-  const meuFeedback = feedbacks.find(f => String(f.idusuario) === String(user.idusuarios));
+  const meuFeedback = feedbacks.find(
+    (fb) =>
+      String(fb.idusuario) === String(user.idusuarios)
+  );
 
   return (
-    <section className="min-h-screen bg-black text-white pb-16">
+    <section className="feedback-page">
 
-      {/* Header */}
-      <div className="flex items-center justify-between max-w-3xl mx-auto px-6 pt-12 pb-8 border-b border-[#1a1a1a]">
+      <header className="feedback-header">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Feedbacks</h1>
-          <p className="text-xs text-[#555] mt-1">Olá, {user.nome}</p>
+          <h1>Feedbacks</h1>
+          <p>Olá, {user.nome}</p>
         </div>
-        <button onClick={onLogout} className="text-xs text-[#555] hover:text-white transition-colors">Sair</button>
-      </div>
 
-      <div className="max-w-3xl mx-auto px-6 pt-8 flex flex-col gap-10">
+        <button
+          className="logout-btn"
+          onClick={onLogout}
+        >
+          Sair
+        </button>
+      </header>
 
-        {/* MODAL visualizar */}
+      <div className="feedback-container">
+
         {visualizando && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-4" onClick={() => setVisualizando(null)}>
-            <div className="bg-[#1a1a1a] rounded-lg p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="font-semibold text-white">{visualizando.nome}</p>
-                  <StarRating value={Number(visualizando.nota)} readonly />
-                </div>
-                <span className="text-xs text-[#555]">{formatDate(visualizando.criado_em)}</span>
+          <div
+            className="modal-overlay"
+            onClick={() => setVisualizando(null)}
+          >
+            <div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>{visualizando.nome}</h3>
+
+              <StarRating
+                value={Number(visualizando.nota)}
+                readonly
+              />
+
+              <p className="feedback-card-message">
+                {visualizando.mensagem}
+              </p>
+
+              <div className="modal-buttons">
+                <button
+                  className="cancel-btn"
+                  onClick={() => setVisualizando(null)}
+                >
+                  Fechar
+                </button>
               </div>
-              <p className="text-sm text-[#aaa] leading-relaxed">{visualizando.mensagem}</p>
-              <button onClick={() => setVisualizando(null)} className="mt-5 text-xs text-[#555] hover:text-white transition-colors">Fechar</button>
             </div>
           </div>
         )}
 
-        {/* MODAL editar */}
         {editando && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center px-4" onClick={() => setEditando(null)}>
-            <div className="bg-[#1a1a1a] rounded-lg p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-              <h2 className="text-sm font-semibold text-[#aaa] mb-4 uppercase tracking-widest">Editar feedback</h2>
-              <form onSubmit={handleEditar} className="flex flex-col gap-4">
-                <StarRating value={editNota} onChange={setEditNota} />
+          <div
+            className="modal-overlay"
+            onClick={() => setEditando(null)}
+          >
+            <div
+              className="modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Editar feedback</h3>
+
+              <form onSubmit={handleEditar}>
+
+                <StarRating
+                  value={editNota}
+                  onChange={setEditNota}
+                />
+
                 <textarea
                   value={editMensagem}
-                  onChange={e => setEditMensagem(e.target.value)}
-                  rows={4}
-                  className="w-full bg-[#111] text-white text-sm px-4 py-3 rounded-lg placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#1DB954] resize-none"
+                  onChange={(e) =>
+                    setEditMensagem(e.target.value)
+                  }
                 />
-                {error && <p className="text-red-400 text-xs">{error}</p>}
-                <div className="flex gap-3">
-                  <button type="submit" disabled={submitting} className="bg-[#1DB954] hover:bg-[#1ed760] disabled:opacity-50 text-black font-semibold text-sm px-5 py-2 rounded-lg transition-colors">
-                    {submitting ? "Salvando..." : "Salvar"}
+
+                <div className="modal-buttons">
+                  <button
+                    type="submit"
+                    className="save-btn"
+                  >
+                    {submitting
+                      ? "Salvando..."
+                      : "Salvar"}
                   </button>
-                  <button type="button" onClick={() => setEditando(null)} className="text-sm text-[#555] hover:text-white transition-colors">Cancelar</button>
+
+                  <button
+                    type="button"
+                    className="cancel-btn"
+                    onClick={() => setEditando(null)}
+                  >
+                    Cancelar
+                  </button>
                 </div>
+
               </form>
             </div>
           </div>
         )}
 
-        {/* Formulário novo feedback */}
         {!jaEnviou ? (
-          <div>
-            <h2 className="text-sm font-semibold text-[#aaa] mb-4 uppercase tracking-widest">Deixe seu feedback</h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <StarRating value={nota} onChange={setNota} />
+          <div className="feedback-form">
+
+            <h2>Deixe seu feedback</h2>
+
+            <form onSubmit={handleSubmit}>
+
+              <StarRating
+                value={nota}
+                onChange={setNota}
+              />
+
               <textarea
                 placeholder="Escreva sua mensagem..."
                 value={mensagem}
-                onChange={e => setMensagem(e.target.value)}
-                rows={4}
-                className="w-full bg-[#1a1a1a] text-white text-sm px-4 py-3 rounded-lg placeholder-[#555] focus:outline-none focus:ring-1 focus:ring-[#1DB954] resize-none"
+                onChange={(e) =>
+                  setMensagem(e.target.value)
+                }
               />
-              {error   && <p className="text-red-400 text-xs">{error}</p>}
-              {success && <p className="text-[#1DB954] text-xs">{success}</p>}
-              <button type="submit" disabled={submitting} className="self-start bg-[#1DB954] hover:bg-[#1ed760] disabled:opacity-50 text-black font-semibold text-sm px-6 py-2.5 rounded-lg transition-colors">
-                {submitting ? "Enviando..." : "Enviar"}
+
+              {error && (
+                <p className="error-msg">
+                  {error}
+                </p>
+              )}
+
+              {success && (
+                <p className="success-msg">
+                  {success}
+                </p>
+              )}
+
+              <button
+                className="submit-btn"
+                type="submit"
+              >
+                {submitting
+                  ? "Enviando..."
+                  : "Enviar"}
               </button>
+
             </form>
+
           </div>
         ) : (
-          <div className="bg-[#1a1a1a] rounded-lg px-5 py-4 text-sm text-[#aaa]">
-            ✓ Você já enviou seu feedback.
+          <div className="feedback-info">
+
+            ✓ Você já enviou um feedback.
+
             {meuFeedback && (
-              <div className="flex gap-3 mt-2">
-                <button onClick={() => abrirEdicao(meuFeedback)} className="text-xs text-[#1DB954] hover:underline">Editar</button>
-                <button onClick={() => handleDeletar(meuFeedback.id)} className="text-xs text-red-400 hover:underline">Excluir</button>
+              <div className="feedback-actions">
+
+                <button
+                  className="edit-btn"
+                  onClick={() =>
+                    abrirEdicao(meuFeedback)
+                  }
+                >
+                  Editar
+                </button>
+
+                <button
+                  className="delete-btn"
+                  onClick={() =>
+                    handleDeletar(meuFeedback.id)
+                  }
+                >
+                  Excluir
+                </button>
+
               </div>
             )}
+
           </div>
         )}
 
-        {/* Lista de feedbacks */}
-        <div>
-          <h2 className="text-sm font-semibold text-[#aaa] mb-4 uppercase tracking-widest">
-            {feedbacks.length} {feedbacks.length === 1 ? "feedback" : "feedbacks"}
+        <div className="feedback-list">
+
+          <h2>
+            {feedbacks.length} Feedbacks
           </h2>
 
           {loading && (
-            <div className="flex justify-center py-10">
-              <div className="w-5 h-5 border-2 border-[#333] border-t-[#1DB954] rounded-full animate-spin" />
-            </div>
+            <p className="loading">
+              Carregando...
+            </p>
           )}
 
-          <div className="flex flex-col gap-3">
-            {feedbacks.map(fb => (
-              <div key={fb.id} className="bg-[#1a1a1a] rounded-lg px-5 py-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="text-sm font-medium text-white">{fb.nome}</p>
-                    <StarRating value={Number(fb.nota)} readonly />
+          {feedbacks.map((fb) => (
+            <div
+              key={fb.id}
+              className="feedback-card"
+            >
+
+              <div className="feedback-card-header">
+
+                <div>
+                  <div className="feedback-card-name">
+                    {fb.nome}
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs text-[#555]">{formatDate(fb.criado_em)}</span>
-                    <button onClick={() => setVisualizando(fb)} className="text-xs text-[#555] hover:text-white transition-colors">Ver</button>
-                    {String(fb.idusuario) === String(user.idusuarios) && (
-                      <>
-                        <button onClick={() => abrirEdicao(fb)} className="text-xs text-[#1DB954] hover:underline transition-colors">Editar</button>
-                        <button onClick={() => handleDeletar(fb.id)} className="text-xs text-red-400 hover:underline transition-colors">Excluir</button>
-                      </>
-                    )}
-                  </div>
+
+                  <StarRating
+                    value={Number(fb.nota)}
+                    readonly
+                  />
                 </div>
-                <p className="text-sm text-[#aaa] leading-relaxed line-clamp-2">{fb.mensagem}</p>
+
+                <span className="feedback-card-date">
+                  {formatDate(fb.criado_em)}
+                </span>
+
               </div>
-            ))}
-            {!loading && feedbacks.length === 0 && (
-              <p className="text-[#555] text-sm">Nenhum feedback ainda. Seja o primeiro!</p>
-            )}
-          </div>
+
+              <p className="feedback-card-message">
+                {fb.mensagem}
+              </p>
+
+              <div className="feedback-card-actions">
+
+                <button
+                  className="edit-btn"
+                  onClick={() =>
+                    setVisualizando(fb)
+                  }
+                >
+                  Ver
+                </button>
+
+                {String(fb.idusuario) ===
+                  String(user.idusuarios) && (
+                    <>
+                      <button
+                        className="edit-btn"
+                        onClick={() =>
+                          abrirEdicao(fb)
+                        }
+                      >
+                        Editar
+                      </button>
+
+                      <button
+                        className="delete-btn"
+                        onClick={() =>
+                          handleDeletar(fb.id)
+                        }
+                      >
+                        Excluir
+                      </button>
+                    </>
+                  )}
+
+              </div>
+
+            </div>
+          ))}
+
         </div>
+
       </div>
+
     </section>
   );
 }

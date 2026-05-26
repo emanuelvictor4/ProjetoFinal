@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import "./PunkGallery.css";
 
 const ACCESS_KEY = "t1QdO_E4LZKp4Pi5FgDdJebgPthQSDQHe5dchZiXtfY";
 
@@ -46,96 +47,127 @@ export default function PunkGallery() {
   };
 
   return (
-    <section className="max-w-5xl mx-auto px-4 py-10">
+    <section className="punk-gallery">
+      <div className="gallery-container">
 
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Galeria</h1>
-        <p className="text-sm text-gray-400">Buscando por: <span className="text-gray-600 font-medium">{query}</span></p>
-      </div>
+        <div className="gallery-header">
+          <h1>Galeria Punk</h1>
+          <p>Buscando por: {query}</p>
+        </div>
 
-      {/* Search */}
-      <form onSubmit={handleSearch} className="flex gap-2 mb-6">
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Buscar imagens..."
-          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-gray-500"
-        />
-        <button
-          type="submit"
-          className="bg-gray-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-700 transition-colors"
+        <form
+          onSubmit={handleSearch}
+          className="search-form"
         >
-          Buscar
-        </button>
-      </form>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Buscar imagens..."
+            className="search-input"
+          />
 
-      {/* Error */}
-      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          <button
+            type="submit"
+            className="search-btn"
+          >
+            Buscar
+          </button>
+        </form>
 
-      {/* Grid */}
-      {photos.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {photos.map((photo, i) => (
+        {error && (
+          <p className="error-message">
+            {error}
+          </p>
+        )}
+
+        {photos.length > 0 && (
+          <div className="gallery-grid">
+            {photos.map((photo, i) => (
+              <div
+                key={`${photo.id}-${i}`}
+                className="gallery-item"
+                onClick={() => setSelected(photo)}
+              >
+                <img
+                  src={photo.urls.small}
+                  alt={photo.alt_description || "foto"}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading &&
+          photos.length === 0 &&
+          !error && (
+            <p className="empty-message">
+              Nenhuma imagem encontrada.
+            </p>
+          )}
+
+        <div className="load-more-container">
+
+          {loading && (
+            <p className="loading">
+              Carregando...
+            </p>
+          )}
+
+          {!loading && hasMore && (
+            <button
+              onClick={handleLoadMore}
+              className="load-more-btn"
+            >
+              Carregar mais
+            </button>
+          )}
+
+        </div>
+
+        {selected && (
+          <div
+            className="modal-overlay"
+            onClick={() => setSelected(null)}
+          >
             <div
-              key={`${photo.id}-${i}`}
-              className="cursor-pointer overflow-hidden rounded"
-              onClick={() => setSelected(photo)}
+              className="modal-content"
+              onClick={(e) =>
+                e.stopPropagation()
+              }
             >
               <img
-                src={photo.urls.small}
-                alt={photo.alt_description || "foto"}
-                className="w-full h-48 object-cover hover:opacity-80 transition-opacity"
-                loading="lazy"
+                src={selected.urls.regular}
+                alt={selected.alt_description}
               />
-            </div>
-          ))}
-        </div>
-      )}
 
-      {/* Empty */}
-      {!loading && photos.length === 0 && !error && (
-        <p className="text-center text-gray-400 py-20 text-sm">Nenhuma imagem encontrada.</p>
-      )}
+              <div className="modal-footer">
 
-      {/* Load More */}
-      <div className="mt-8 text-center">
-        {loading && <p className="text-sm text-gray-400">Carregando...</p>}
-        {!loading && hasMore && (
-          <button
-            onClick={handleLoadMore}
-            className="border border-gray-300 text-gray-600 px-6 py-2 rounded text-sm hover:bg-gray-50 transition-colors"
-          >
-            Carregar mais
-          </button>
-        )}
-      </div>
+                <div>
+                  <p className="modal-author">
+                    {selected.user.name}
+                  </p>
 
-      {/* Lightbox */}
-      {selected && (
-        <div
-          className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelected(null)}
-        >
-          <div className="bg-white rounded overflow-hidden max-w-2xl w-full" onClick={e => e.stopPropagation()}>
-            <img
-              src={selected.urls.regular}
-              alt={selected.alt_description}
-              className="w-full max-h-[70vh] object-contain"
-            />
-            <div className="p-3 flex justify-between items-center">
-              <div>
-                <p className="text-sm font-medium text-gray-800">{selected.user.name}</p>
-                <p className="text-xs text-gray-400">{selected.likes} curtidas</p>
+                  <p className="modal-likes">
+                    {selected.likes} curtidas
+                  </p>
+                </div>
+
+                <button
+                  className="close-btn"
+                  onClick={() =>
+                    setSelected(null)
+                  }
+                >
+                  Fechar
+                </button>
+
               </div>
-              <button onClick={() => setSelected(null)} className="text-gray-400 hover:text-gray-600 text-sm">
-                Fechar
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      </div>
     </section>
   );
 }
