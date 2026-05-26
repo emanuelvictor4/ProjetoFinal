@@ -3,15 +3,45 @@ import axios from "axios";
 
 // IDs fixos do Spotify
 const ARTIST_IDS = [
-  "7oPftvlwr6VrsViSDV7fJY"
+  "7oPftvlwr6VrsViSDV7fJY", // Green Day
+  "2VfPTt27fpGRaJp4DWQwrK", // Sex Pistols
+  "1co4F2pPNH8JjTutZkmgSm", // Ramones
+  "0Z4g465bQVTJzvHNBbZQ3j", // The Clash
+  "0fINwWbE23WrVHV6H8XPjC", // Joy Division
+  "1rRmHvS2EhHXmKsSxWCfDq", // Blondie
+  "33EUXrFKGjpUSGacqEHhU4", // Iggy Pop
+  "1NfYkQBnBNuSg70fTMUuAz", // Patti Smith
+  "1wr7qvBDXnCQaqBvJgGTFo", // The Offspring
+  "6TE191rjWqJKKlDDGIBKWr", // Joan Jett & the Blackhearts
+  "3qm84nBOXUEQ2vnTfUTTFC", // Billy Idol
+  "56oDe7u8SBmHLGk7bRcfxb", // The Stooges
+  "5ZNeElLMFMbMobgJFCrqLb", // Bad Religion
 ];
 
 const ALBUM_IDS = [
-  "45eDjdVVHPTzCFUAQiXhmL"
+  "6k90GDHpQ8a6IkZ3mFzuCG", // Never Mind the Bollocks - Sex Pistols
+  "45eDjdVVHPTzCFUAQiXhmL", // Dookie - Green Day
+  "3hfHy9NovBv6RoXPZuTW3N", // ...And Out Come the Wolves - Rancid
+  "6WIFDGIG4DtJwFqYL3HKGI", // Horses - Patti Smith
+  "6TxgQwGrbG3XZLNPOEhg7E", // Singles Going Steady - Buzzcocks
+  "6jKpIJNGv3uBpI2LNeCrAk", // Walk Among Us - Misfits
+  "6FrjMq8rWPMBjHJeROZFcT", // Ramones - Ramones
+  "7oRCkLPCNWJMRCTm1rBP7T", // Damaged - Black Flag
+  "4klXRcHFMaONvxpPXhFiqk", // Milo Goes to College - Descendents
+  "6K3YrFwGMnVvMOdFJBME8y", // Fresh Fruit for Rotting Vegetables - Dead Kennedys
 ];
 
 const TRACK_IDS = [
-  "6l8GvAyoUZwWDgF1e4822w"
+  "4wGrK0Hqzv1X1BM81V7J46", // Ever Fallen in Love - Buzzcocks
+  "6eEDsAouWNgjCm1RGjBXJa", // I Wanna Be Sedated - Ramones
+  "0Y6dVaFbFlomZinDCXvCDq", // Blitzkrieg Bop - Ramones
+  "6l8GvAyoUZwWDgF1e4822w", // Basket Case - Green Day
+  "5XD8CQMBnBhIyRVAKIqpSd", // In Too Deep - Sum 41
+  "0JPMb1gUGFT6zRBYjIFIJN", // I Fought the Law - The Clash
+  "6T4bBSLXTZKyMCHiHMAnX2", // God Save the Queen - Sex Pistols
+  "3cAeRRvExh8FwzWPQqMhsS", // Punk Rock Song - Bad Religion
+  "2yE3bwbhqypdsuhmv48Svn", // Alternative Ulster - Stiff Little Fingers
+  "4EUAdFODgiLjf1QNDq122f", // Idiots Are Taking Over - NOFX
 ];
 
 async function getToken() {
@@ -33,49 +63,22 @@ export default function SpotifyGallery() {
   const fetchAll = async () => {
     setLoading(true);
     setError(null);
-
     try {
       const token = await getToken();
-
-      console.log("TOKEN:", token);
-
-      const headers = {
-        Authorization: `Bearer ${token}`,
-      };
-
-      const teste = await axios.get(
-        "https://api.spotify.com/v1/artists/7oPftvlwr6VrsViSDV7fJY",
-        { headers }
-      );
-
-      console.log("TESTE ARTISTA:", teste.data);
+      const base = "http://localhost/projetoFinal/punk/back-end/spotify-search.php";
 
       const [tracksRes, albumsRes, artistsRes] = await Promise.all([
-        axios.get("https://api.spotify.com/v1/tracks", {
-          headers,
-          params: { ids: TRACK_IDS.join(",") },
-        }),
-        axios.get("https://api.spotify.com/v1/albums", {
-          headers,
-          params: { ids: ALBUM_IDS.join(",") },
-        }),
-        axios.get("https://api.spotify.com/v1/artists", {
-          headers,
-          params: { ids: ARTIST_IDS.join(",") },
-        }),
+        axios.get(base, { params: { type: "tracks", ids: TRACK_IDS.join(","), token } }),
+        axios.get(base, { params: { type: "albums", ids: ALBUM_IDS.join(","), token } }),
+        axios.get(base, { params: { type: "artists", ids: ARTIST_IDS.join(","), token } }),
       ]);
 
-      setTracks((tracksRes.data.tracks || []).filter(Boolean));
-      setAlbums((albumsRes.data.albums || []).filter(Boolean));
-      setArtists((artistsRes.data.artists || []).filter(Boolean));
-
+      setTracks(tracksRes.data.tracks);
+      setAlbums(albumsRes.data.albums);
+      setArtists(artistsRes.data.artists);
       setLoaded(true);
     } catch (err) {
-      console.error("===== ERRO SPOTIFY =====");
-      console.error("Status:", err.response?.status);
-      console.error("Data:", err.response?.data);
-      console.error("Erro completo:", err);
-
+      console.log("Erro:", err.response?.data);
       setError("Erro ao carregar conteúdo do Spotify.");
     } finally {
       setLoading(false);
@@ -85,14 +88,12 @@ export default function SpotifyGallery() {
   useEffect(() => { fetchAll(); }, []);
 
   const playPreview = (track) => {
-    if (!track?.preview_url || !audioRef.current) return;
-
+    if (!track.preview_url) return;
     if (currentPreview?.id === track.id) {
       audioRef.current.pause();
       setCurrentPreview(null);
       return;
     }
-
     audioRef.current.src = track.preview_url;
     audioRef.current.play();
     setCurrentPreview(track);
@@ -147,8 +148,8 @@ export default function SpotifyGallery() {
                 key={key}
                 onClick={() => setTab(key)}
                 className={`px-5 py-1.5 rounded-full text-sm font-medium transition-colors ${tab === key
-                  ? "bg-white text-black"
-                  : "text-[#aaa] hover:text-white border border-[#333] hover:border-[#555]"
+                    ? "bg-white text-black"
+                    : "text-[#aaa] hover:text-white border border-[#333] hover:border-[#555]"
                   }`}
               >
                 {label}
@@ -169,15 +170,15 @@ export default function SpotifyGallery() {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-white truncate">{track.name}</p>
-                        <p className="text-xs text-[#aaa] truncate mt-0.5">{track.artists?.map(a => a.name).join(", ")}</p>
+                        <p className="text-xs text-[#aaa] truncate mt-0.5">{track.artists.map(a => a.name).join(", ")}</p>
                       </div>
                       <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                         {track.preview_url ? (
                           <button
                             onClick={() => playPreview(track)}
                             className={`text-xs px-3 py-1 rounded-full transition-colors ${currentPreview?.id === track.id
-                              ? "bg-[#1DB954] text-black font-semibold"
-                              : "border border-[#333] text-[#aaa] hover:border-[#1DB954] hover:text-[#1DB954]"
+                                ? "bg-[#1DB954] text-black font-semibold"
+                                : "border border-[#333] text-[#aaa] hover:border-[#1DB954] hover:text-[#1DB954]"
                               }`}
                           >
                             {currentPreview?.id === track.id ? "⏸ pausar" : "▶ preview"}
@@ -205,7 +206,7 @@ export default function SpotifyGallery() {
                     )}
                   </div>
                   <p className="text-xs font-medium text-white truncate">{album.name}</p>
-                  <p className="text-xs text-[#aaa] truncate mt-0.5">{track.artists?.map(a => a.name).join(", ")}</p>
+                  <p className="text-xs text-[#aaa] truncate mt-0.5">{album.artists.map(a => a.name).join(", ")}</p>
                   <p className="text-xs text-[#555] mt-0.5">{album.release_date?.slice(0, 4)}</p>
                 </a>
               ))}
