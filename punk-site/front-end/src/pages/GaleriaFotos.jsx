@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import './GaleriaFotos.css'
+import '../styles/galeriaFotos.css'
 
 const ACCESS_KEY = 't1QdO_E4LZKp4Pi5FgDdJebgPthQSDQHe5dchZiXtfY'
 const API = 'https://api.unsplash.com/search/photos'

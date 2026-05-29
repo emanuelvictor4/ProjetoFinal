@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
-import './Feedbacks.css'
+import '../styles/feedbacks.css'
 
 const API = 'http://localhost/punk-site/back-end/api/feedbacks.php'
 
