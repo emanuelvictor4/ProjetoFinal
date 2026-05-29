@@ -1,0 +1,86 @@
+.spotify-gallery {
+
+    padding: 40px;
+
+    background: #121212;
+
+    min-height: 100vh;
+
+    color: white;
+
+}
+
+.spotify-gallery h1 {
+
+    margin-bottom: 40px;
+
+    color: #1DB954;
+
+}
+
+.spotify-gallery h2 {
+
+    margin:
+
+        40px 0 20px;
+
+}
+
+.spotify-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill,
+            minmax(220px, 1fr));
+
+    gap: 20px;
+
+}
+
+.spotify-card {
+
+    background: #1a1a1a;
+
+    padding: 15px;
+
+    border-radius: 12px;
+
+    transition: .3s;
+
+}
+
+.spotify-card:hover {
+
+    transform:
+        translateY(-5px);
+
+}
+
+.spotify-card img {
+
+    width: 100%;
+
+    height: 220px;
+
+    object-fit: cover;
+
+    border-radius: 10px;
+
+}
+
+.spotify-card h3 {
+
+    margin-top: 10px;
+
+    font-size: 1rem;
+
+}
+
+.spotify-card p {
+
+    color: #aaa;
+
+    font-size: .9rem;
+
+}
